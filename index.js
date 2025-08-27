@@ -183,21 +183,6 @@ function buildVerificationMessage(member) {
 		.setFooter({ text: 'made by 6main' })
 		.setTimestamp(new Date());
 
-	// Ajouter une note sur les permissions
-	if (PERM_BOT) {
-		embed.addFields({
-			name: '🔐 Permissions requises',
-			value: `Seuls les membres avec le rôle <@&${PERM_BOT}> peuvent utiliser ces boutons.`,
-			inline: false
-		});
-	} else {
-		embed.addFields({
-			name: '🔐 Permissions requises',
-			value: 'Seuls les membres avec la permission `KickMembers` ou `ManageRoles` peuvent utiliser ces boutons.',
-			inline: false
-		});
-	}
-
 	const actionRow = new ActionRowBuilder().addComponents(
 		new ButtonBuilder()
 			.setCustomId(`verify_accept:${member.id}`)
@@ -212,7 +197,6 @@ function buildVerificationMessage(member) {
 	return { embed, components: [actionRow] };
 }
 
-// Quand un utilisateur rejoint le serveur, envoyer l'embed de vérification
 client.on('guildMemberAdd', async (member) => {
 	try {
 		const channel = await client.channels.fetch(VERIFY_CHANNEL_ID);
