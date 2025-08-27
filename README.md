@@ -38,7 +38,7 @@ Créer un fichier `.env` à la racine du projet :
 DISCORD_TOKEN=votre_token_bot_discord
 VERIFY_CHANNEL_ID=id_du_channel_verification
 VERIFIED_ROLE_ID=id_du_role_verifie
-VERIFY_ROLES=id_role1,id_role2,id_role3
+PERM_BOT=id_du_role_qui_donne_acces_aux_boutons
 WELCOME_CHANNEL_ID=id_du_channel_bienvenue
 LOG_CHANNEL_ID=id_du_channel_logs
 PORT=3000
@@ -63,7 +63,7 @@ Configurer ces variables dans votre dashboard Render :
 - `DISCORD_TOKEN`
 - `VERIFY_CHANNEL_ID`
 - `VERIFIED_ROLE_ID`
-- `VERIFY_ROLES`
+- `PERM_BOT`
 - `WELCOME_CHANNEL_ID`
 - `LOG_CHANNEL_ID`
 
@@ -74,7 +74,12 @@ Connectez votre repository GitHub à Render pour un déploiement automatique.
 
 ### Permissions requises
 - **Bot** : `Guilds`, `GuildMembers`, `SendMessages`, `ManageRoles`
-- **Utilisateurs** : Rôles spécifiés dans `VERIFY_ROLES` ou permission `KickMembers`
+- **Utilisateurs** : 
+  - Rôle spécifié dans `PERM_BOT` (recommandé)
+  - OU permissions Discord natives : `KickMembers` ou `ManageRoles`
+
+### Commande de vérification des permissions
+- `/verifperms` : Vérifie si vous avez les permissions nécessaires
 
 ### Workflow de vérification
 1. Nouveau membre rejoint le serveur
@@ -85,10 +90,12 @@ Connectez votre repository GitHub à Render pour un déploiement automatique.
 
 ## 🔒 Sécurité
 
-- Vérification des permissions avant actions
-- Logs de toutes les opérations
-- Gestion des erreurs robuste
-- Variables d'environnement sécurisées
+- **Système de permissions robuste** : Seuls les membres avec les rôles spécifiés peuvent vérifier
+- **Vérification des permissions** : Contrôle automatique avant chaque action
+- **Logs complets** : Suivi de toutes les opérations avec horodatage
+- **Gestion des erreurs** : Gestion robuste des cas d'erreur
+- **Variables d'environnement** : Configuration sécurisée via fichiers .env
+- **Commande de test** : `/verifperms` pour vérifier les permissions
 
 ## 📝 API Endpoints
 

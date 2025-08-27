@@ -11,7 +11,7 @@ services:
         sync: false
       - key: VERIFIED_ROLE_ID
         sync: false
-      - key: VERIFY_ROLES
+      - key: PERM_BOT
         sync: false
       - key: WELCOME_CHANNEL_ID
         sync: false

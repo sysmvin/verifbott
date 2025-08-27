@@ -15,7 +15,7 @@ const http = require('http');
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const VERIFY_CHANNEL_ID = process.env.VERIFY_CHANNEL_ID; // Channel où poster les embeds de vérif
 const VERIFIED_ROLE_ID = process.env.VERIFIED_ROLE_ID; // Rôle à donner si accepté
-const VERIFY_ROLES = process.env.VERIFY_ROLES ? process.env.VERIFY_ROLES.split(',') : []; // Rôles autorisés à vérifier
+const PERM_BOT = process.env.PERM_BOT; // Rôle qui donne accès aux boutons de vérification
 const WELCOME_CHANNEL_ID = process.env.WELCOME_CHANNEL_ID; // Channel pour le message de bienvenue
 const LOG_CHANNEL_ID = process.env.LOG_CHANNEL_ID; // Channel pour les logs
 
@@ -57,6 +57,85 @@ server.listen(PORT, () => {
 
 client.once('ready', async () => {
 	console.log(`[BOT] Connecté en tant que ${client.user.tag}`);
+	
+	// Enregistrer les commandes slash
+	try {
+		const commands = [
+			{
+				name: 'verifperms',
+				description: 'Vérifier vos permissions de vérification',
+				type: 1 // CHAT_INPUT
+			}
+		];
+		
+		// Enregistrer les commandes globalement
+		await client.application.commands.set(commands);
+		console.log('[BOT] Commandes slash enregistrées avec succès');
+	} catch (error) {
+		console.error('[BOT] Erreur lors de l\'enregistrement des commandes:', error);
+	}
+});
+
+/**
+ * Vérifie si un utilisateur a la permission d'utiliser les boutons de vérification
+ */
+async function checkVerificationPermission(interaction) {
+	try {
+		// Vérifier si l'utilisateur est dans le serveur
+		if (!interaction.member || !interaction.guild) {
+			return false;
+		}
+
+		// Si PERM_BOT est défini, vérifier que l'utilisateur a ce rôle
+		if (PERM_BOT) {
+			const hasRequiredRole = interaction.member.roles.cache.has(PERM_BOT);
+			return hasRequiredRole;
+		}
+
+		// Fallback : permissions Discord natives (si PERM_BOT n'est pas défini)
+		const hasKickPermission = interaction.member.permissions?.has('KickMembers') || false;
+		const hasManageRolesPermission = interaction.member.permissions?.has('ManageRoles') || false;
+		
+		return hasKickPermission || hasManageRolesPermission;
+	} catch (error) {
+		console.error('[PERMISSIONS] Erreur lors de la vérification des permissions:', error);
+		return false;
+	}
+}
+
+/**
+ * Retourne le texte des rôles requis pour la vérification
+ */
+function getRequiredRolesText() {
+	if (PERM_BOT) {
+		return `<@&${PERM_BOT}>`;
+	} else {
+		return 'Permission `KickMembers` ou `ManageRoles`';
+	}
+}
+
+/**
+ * Commande slash pour vérifier les permissions de vérification
+ */
+client.on('interactionCreate', async (interaction) => {
+	if (!interaction.isChatInputCommand()) return;
+	
+	if (interaction.commandName === 'verifperms') {
+		const hasPermission = await checkVerificationPermission(interaction);
+		const requiredRoles = getRequiredRolesText();
+		
+		const embed = new EmbedBuilder()
+			.setTitle('🔐 Vérification des Permissions')
+			.setDescription(`**Votre statut :** ${hasPermission ? '✅ Autorisé' : '❌ Non autorisé'}`)
+			.addFields(
+				{ name: 'Rôles requis', value: requiredRoles, inline: false },
+				{ name: 'Vos rôles', value: interaction.member.roles.cache.map(role => `<@&${role.id}>`).join(', ') || 'Aucun rôle', inline: false }
+			)
+			.setColor(hasPermission ? 0x00ff00 : 0xff0000)
+			.setTimestamp(new Date());
+		
+		await interaction.reply({ embeds: [embed], ephemeral: true });
+	}
 });
 
 /**
@@ -104,6 +183,21 @@ function buildVerificationMessage(member) {
 		.setFooter({ text: 'made by 6main' })
 		.setTimestamp(new Date());
 
+	// Ajouter une note sur les permissions
+	if (PERM_BOT) {
+		embed.addFields({
+			name: '🔐 Permissions requises',
+			value: `Seuls les membres avec le rôle <@&${PERM_BOT}> peuvent utiliser ces boutons.`,
+			inline: false
+		});
+	} else {
+		embed.addFields({
+			name: '🔐 Permissions requises',
+			value: 'Seuls les membres avec la permission `KickMembers` ou `ManageRoles` peuvent utiliser ces boutons.',
+			inline: false
+		});
+	}
+
 	const actionRow = new ActionRowBuilder().addComponents(
 		new ButtonBuilder()
 			.setCustomId(`verify_accept:${member.id}`)
@@ -141,21 +235,13 @@ client.on('interactionCreate', async (interaction) => {
 		const [action, targetId] = interaction.customId.split(':');
 		if (!['verify_accept', 'verify_reject'].includes(action) || !targetId) return;
 
-		// Permissions: vérifier les rôles autorisés
-		let hasPermission = false;
-		
-		// Si des rôles spécifiques sont définis, vérifier ceux-ci
-		if (VERIFY_ROLES.length > 0) {
-			hasPermission = interaction.member.roles.cache.some(role => 
-				VERIFY_ROLES.includes(role.id)
-			);
-		} else {
-			// Sinon, utiliser la permission KickMembers comme fallback
-			hasPermission = interaction.memberPermissions?.has('KickMembers') || false;
-		}
-		
+		// Vérification des permissions de vérification
+		const hasPermission = await checkVerificationPermission(interaction);
 		if (!hasPermission) {
-			return interaction.reply({ content: 'Tu n\'as pas la permission d\'utiliser ces boutons.', ephemeral: true });
+			return interaction.reply({ 
+				content: '❌ **Accès refusé** : Vous n\'avez pas la permission d\'utiliser les boutons de vérification.\n\n**Rôles requis :** ' + getRequiredRolesText(), 
+				ephemeral: true 
+			});
 		}
 
 		const guild = interaction.guild;
