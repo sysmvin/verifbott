@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: bot-verification-discord
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: DISCORD_TOKEN
+        sync: false
+      - key: VERIFY_CHANNEL_ID
+        sync: false
+      - key: VERIFIED_ROLE_ID
+        sync: false
+      - key: VERIFY_ROLES
+        sync: false
+      - key: WELCOME_CHANNEL_ID
+        sync: false
+      - key: LOG_CHANNEL_ID
+        sync: false
+      - key: PORT
+        value: 10000

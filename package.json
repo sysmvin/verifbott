@@ -1,0 +1,21 @@
+{
+  "name": "bot-verification-discord",
+  "version": "1.0.0",
+  "description": "Bot de vérification automatique pour Discord",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "keywords": ["discord", "bot", "verification"],
+  "author": "6main",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
